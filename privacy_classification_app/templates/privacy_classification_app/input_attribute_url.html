@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head><title>Attribute Span Extractor</title></head>
+<body>
+    <h2>Extract Attribute Spans from Privacy Policy</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="url" style="width:400px" placeholder="https://..." value="{{ default_url }}" />
+        <button type="submit">Extract</button>
+    </form>
+</body>
+</html>

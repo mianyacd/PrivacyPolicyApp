@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Classify Privacy Policy</title>
+</head>
+<body>
+    <h2>Enter Privacy Policy URL</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="url" style="width:400px" placeholder="https://..." />
+        <button type="submit">Classify</button>
+    </form>
+</body>
+</html>
