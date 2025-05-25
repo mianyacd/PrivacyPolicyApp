@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: privacy-policy-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn PrivacyPolicyApp.wsgi
+    envVars:
+      - key: HF_TOKEN
+        sync: false
