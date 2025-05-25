@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+
+# Virtualenv
+.venv/
+.env
+.env.*
+
+
+# Django static/
+static/
+
+# Model folders (Hugging Face fine-tuned models)
+fine_tuned_bert_5/
+PIT_fine_tuned_bert/
+PP_fine_tuned_bert/
+DDN_fine_tuned_bert/
+TPE_fine_tuned_bert/
+spanbert-finetuned/
+*.bin
+*.pt
+*.safetensors
+*.log
+*.ckpt
