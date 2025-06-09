@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="09994c24-aec2-4ab4-815d-b18ba4396b2c" name="Changes" comment="feat(api): update views_api to include attribute predictions&#10;&#10;- Modified ExtractAttributesView to return predicted values&#10;- Updated CollectedPersonalInfoView to use predicted labels instead of spans&#10;- Minor cleanups in attribute_predictor and extraction_pipeline" />
+    <list default="true" id="09994c24-aec2-4ab4-815d-b18ba4396b2c" name="Changes" comment="feat(api): update views_api to include attribute predictions&#10;&#10;- Modified ExtractAttributesView to return predicted values&#10;- Updated CollectedPersonalInfoView to use predicted labels instead of spans&#10;- Minor cleanups in attribute_predictor and extraction_pipeline">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PrivacyPolicyApp/settings.py" beforeDir="false" afterPath="$PROJECT_DIR$/PrivacyPolicyApp/settings.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/privacy_classification_app/load_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/privacy_classification_app/load_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/privacy_classification_app/span_model_runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/privacy_classification_app/span_model_runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/privacy_classification_app/views_api.py" beforeDir="false" afterPath="$PROJECT_DIR$/privacy_classification_app/views_api.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -33,7 +41,7 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/mianyacd/PrivacyPolicyAPP.git&quot;,
+    &quot;url&quot;: &quot;https://github.com/mianyacd/PrivacyPolicyApp.git&quot;,
     &quot;accountId&quot;: &quot;589d753f-961a-4c63-8b4b-56a3e69a894e&quot;
   }
 }</component>
@@ -54,6 +62,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/mianyang/PycharmProjects/PrivacyPolicyApp_clean&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -113,6 +122,9 @@
       <workItem from="1746818764226" duration="38611000" />
       <workItem from="1748052470464" duration="29295000" />
       <workItem from="1748178576013" duration="3183000" />
+      <workItem from="1748185800661" duration="2050000" />
+      <workItem from="1748187941699" duration="22410000" />
+      <workItem from="1749488898210" duration="5681000" />
     </task>
     <task id="LOCAL-00001" summary="feat(api): update views_api to include attribute predictions&#10;&#10;- Modified ExtractAttributesView to return predicted values&#10;- Updated CollectedPersonalInfoView to use predicted labels instead of spans&#10;- Minor cleanups in attribute_predictor and extraction_pipeline">
       <option name="closed" value="true" />

@@ -25,7 +25,7 @@ def load_span_model():
         subfolder=SUBFOLDER,
         token=HF_TOKEN
     )
-    model = AutoModelForTokenClassification.from_pretrained(
+    model = AutoModelForQuestionAnswering.from_pretrained(
         BASE_REPO,
         subfolder=SUBFOLDER,
         token=HF_TOKEN

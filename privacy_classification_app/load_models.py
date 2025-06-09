@@ -11,6 +11,40 @@ HF_TOKEN = settings.HF_TOKEN
 
 BASE_REPO = "mianyangacd/privacy-policy-spanbert"
 
+'''
+def load_model_and_tokenizer(subfolder, use_bert=False, use_token_classification=False):
+    if use_token_classification:
+        model = AutoModelForTokenClassification.from_pretrained(
+            BASE_REPO,
+            subfolder=subfolder,
+            token=HF_TOKEN
+        )
+    elif use_bert:
+        model = BertForSequenceClassification.from_pretrained(
+            BASE_REPO,
+            subfolder=subfolder,
+            token=HF_TOKEN
+        )
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            BASE_REPO,
+            subfolder=subfolder,
+            token=HF_TOKEN
+        )
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        BASE_REPO,
+        subfolder=subfolder,
+        token=HF_TOKEN
+    )
+    model.eval()
+    return model, tokenizer
+
+'''
+
+
+
+
 def load_model_and_tokenizer(subfolder, use_bert=False):
     if use_bert:
         model = BertForSequenceClassification.from_pretrained(

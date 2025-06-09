@@ -136,6 +136,12 @@ class PersonalInfoSummaryView(APIView):
             "predicted_categories": predicted_labels
         })
 
+
+'''
+Following code is previous code that only return pit for First Party Collection/Use
+'''
+'''
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CollectedPersonalInfoView(APIView):
     def post(self, request):
@@ -176,6 +182,82 @@ class CollectedPersonalInfoView(APIView):
                 "url": url,
                 "collected_personal_information": sorted(collected_info_set)
             })
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+'''
+
+'''
+Following code support both pit for First Party and Third Party
+'''
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CollectedPersonalInfoView(APIView):
+    def post(self, request):
+        url = request.data.get("url")
+        include = request.data.get("include", ["first", "third"])
+        include = [item.lower() for item in include]
+
+        if not url:
+            return Response({"error": "Missing 'url' in POST data."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        allowed_values = {"first", "third"}
+        invalid_values = [val for val in include if val not in allowed_values]
+        if invalid_values:
+            return Response({
+                "error": "Invalid values in 'include' parameter.",
+                "allowed_values": list(allowed_values),
+                "invalid_values": invalid_values
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            paragraphs = extract_paragraphs_from_url(url)
+            first_party_info = set()
+            third_party_info = set()
+
+            for para in paragraphs:
+                labels = predict_paragraph_category(para)
+
+
+                need_process = (
+                    ("first" in include and "First Party Collection/Use" in labels) or
+                    ("third" in include and "Third Party Sharing/Collection" in labels)
+                )
+                if not need_process:
+                    continue
+
+                extracted = extract_from_paragraph(para, labels, span_model, span_tokenizer)
+                for sentence_item in extracted:
+                    category = sentence_item["category"]
+                    if category == "First Party Collection/Use" and "first" not in include:
+                        continue
+                    if category == "Third Party Sharing/Collection" and "third" not in include:
+                        continue
+
+                    attributes = sentence_item["attributes"]
+                    sentence = sentence_item["sentence"]
+
+                    does_spans = attributes.get("Does/Does Not", [])
+                    joined_does = ", ".join(does_spans)
+                    if not joined_does or predict_does_not_label(joined_does) != "Does":
+                        continue
+
+                    for pit_span in attributes.get("Personal Information Type", []):
+                        if is_real_span(pit_span, sentence):
+                            predicted_value = predict_pit_value(pit_span)
+                            if category == "First Party Collection/Use":
+                                first_party_info.add(predicted_value)
+                            elif category == "Third Party Sharing/Collection":
+                                third_party_info.add(predicted_value)
+
+            response_data = {"url": url}
+            if "first" in include:
+                response_data["first_party_collected_personal_information"] = sorted(first_party_info)
+            if "third" in include:
+                response_data["third_party_collected_personal_information"] = sorted(third_party_info)
+
+            return Response(response_data)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
