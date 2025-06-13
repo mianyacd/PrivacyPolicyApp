@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Filter Sentences by PIT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+        }
+
+        .highlighted {
+            background-color: #f0f8ff;
+            margin-bottom: 1em;
+            padding: 10px;
+            border-left: 3px solid #0077cc;
+        }
+
+        mark {
+            background-color: yellow;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>🔎 Filter Sentences by Personal Information Type</h2>
+
+<label for="url">Privacy Policy URL:</label><br>
+<input type="text" id="url" value="https://example.com/privacy-policy" style="width:100%;"><br><br>
+
+<label for="pit">PIT Value (e.g., Contact, Location, Health):</label><br>
+<input type="text" id="pit" value="Contact" style="width:50%;"><br><br>
+
+<label>Include Source:</label><br>
+<label><input type="checkbox" id="first" checked> First Party</label>
+<label><input type="checkbox" id="third" checked> Third Party</label><br><br>
+
+<button onclick="sendRequest()">🔍 Search</button>
+
+<hr>
+
+<div id="results"></div>
+
+<script>
+    async function sendRequest() {
+        const url = document.getElementById('url').value;
+        const pit = document.getElementById('pit').value;
+        const include = [];
+        if (document.getElementById('first').checked) include.push('first');
+        if (document.getElementById('third').checked) include.push('third');
+
+        const response = await fetch("http://127.0.0.1:8000/api/filter-sentences-by-pit/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                url: url,
+                pit_value: pit,
+                include: include
+            })
+        });
+
+        const data = await response.json();
+        const resultDiv = document.getElementById("results");
+        resultDiv.innerHTML = "";
+
+        if (data.matched_sentences && data.matched_sentences.length > 0) {
+            data.matched_sentences.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "highlighted";
+                div.innerHTML = `<strong>${item.category}</strong><br>${item.highlighted_html}`;
+                resultDiv.appendChild(div);
+            });
+        } else {
+            resultDiv.innerHTML = "<p>No matched sentences found.</p>";
+        }
+    }
+</script>
+
+</body>
+</html>

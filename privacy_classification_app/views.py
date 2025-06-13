@@ -219,3 +219,5 @@ class ClassifyParagraphView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+def test_filter_sentences_page(request):
+    return render(request, 'privacy_classification_app/test_filter_sentences.html')

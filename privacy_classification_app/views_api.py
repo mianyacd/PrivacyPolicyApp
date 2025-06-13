@@ -261,3 +261,80 @@ class CollectedPersonalInfoView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class FilterSentencesByPITView(APIView):
+    def post(self, request):
+        url = request.data.get("url")
+        pit_value = request.data.get("pit_value")
+        include = request.data.get("include", ["first", "third"])
+        include = [item.lower() for item in include]
+
+        if not url or not pit_value:
+            return Response({"error": "Missing 'url' or 'pit_value'"}, status=400)
+
+        allowed_values = {"first", "third"}
+        invalid_values = [val for val in include if val not in allowed_values]
+        if invalid_values:
+            return Response({
+                "error": "Invalid values in 'include' parameter.",
+                "allowed_values": list(allowed_values),
+                "invalid_values": invalid_values
+            }, status=400)
+
+        paragraphs = extract_paragraphs_from_url(url)
+        matched_sentences = []
+
+        for para in paragraphs:
+            labels = predict_paragraph_category(para)
+
+            need_process = (
+                ("first" in include and "First Party Collection/Use" in labels) or
+                ("third" in include and "Third Party Sharing/Collection" in labels)
+            )
+            if not need_process:
+                continue
+
+            extracted = extract_from_paragraph(para, labels, span_model, span_tokenizer)
+            for sentence_item in extracted:
+                category = sentence_item["category"]
+                if category == "First Party Collection/Use" and "first" not in include:
+                    continue
+                if category == "Third Party Sharing/Collection" and "third" not in include:
+                    continue
+
+                attributes = {
+                    attr: [s for s in spans if is_real_span(s, sentence_item["sentence"])]
+                    for attr, spans in sentence_item["attributes"].items()
+                }
+                sentence_item["attributes"] = attributes
+
+                sentence_item["highlighted_html"] = highlight_spans(
+                    sentence_item["sentence"],
+                    {"Personal Information Type": sentence_item["attributes"].get("Personal Information Type", [])},
+                    sentence_item["category"]
+                )
+
+                expected_attrs = get_attributes_for_label(category)
+                predicted_values = {}
+                for attr in expected_attrs:
+                    joined = ", ".join(attributes.get(attr, []))
+                    if attr == "Personal Information Type" and joined:
+                        predicted_values[attr] = predict_pit_value(joined)
+                    elif attr == "Purpose" and joined:
+                        predicted_values[attr] = predict_purpose_value(joined)
+                    elif attr == "Does/Does Not" and joined:
+                        predicted_values[attr] = predict_does_not_label(joined)
+                    elif attr == "Third Party Entity" and joined:
+                        predicted_values[attr] = predict_tpe_value(joined)
+
+                sentence_item["predicted_values"] = predicted_values
+
+
+                if (predicted_values.get("Personal Information Type") == pit_value and
+                    predicted_values.get("Does/Does Not") == "Does"):
+                    matched_sentences.append(sentence_item)
+
+        return Response({"matched_sentences": matched_sentences})
+
