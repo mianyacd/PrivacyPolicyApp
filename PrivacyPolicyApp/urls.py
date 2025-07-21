@@ -16,8 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from privacy_classification_app.views import index
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    path('', include('privacy_classification_app.urls')),
     path('api/', include('privacy_classification_app.urls')),
+    path('', index, name='index'),
 ]

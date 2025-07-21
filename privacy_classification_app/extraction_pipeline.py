@@ -43,3 +43,22 @@ def extract_from_paragraph(paragraph_text, labels, model, tokenizer):
             })
     return results
 
+def highlight_spans(sentence, attributes, category, predicted_values=None):
+    html = sentence
+    for attr_type, spans in attributes.items():
+        css_class = ""
+        tooltip = ""
+
+        if attr_type == "Personal Information Type":
+            css_class = "highlight-pit"
+        elif attr_type == "Purpose":
+            css_class = "highlight-purpose"
+            # ✅ Use real predicted Purpose value if available
+            purpose_value = predicted_values.get("Purpose", "Purpose") if predicted_values else "Purpose"
+            tooltip = f'data-tooltip="Purpose: {purpose_value}"'
+        elif attr_type == "Does/Does Not":
+            css_class = "highlight-does"
+
+        for span in spans:
+            html = html.replace(span, f'<mark class="{css_class}" {tooltip}>{span}</mark>')
+    return html

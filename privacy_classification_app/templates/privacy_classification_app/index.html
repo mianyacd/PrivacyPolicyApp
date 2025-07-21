@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Privacy Policy Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 40px; background-color: #f7f9fc; }
+        .highlight-blue { color: blue; font-weight: bold; }
+        .highlight-green { color: green; font-weight: bold; }
+        .highlight-orange { color: orange; font-weight: bold; cursor: pointer; }
+        .highlight-sentence {
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            padding: 2px 4px;
+        }
+        .attribute-link.active-attr {
+            background-color: #e9ecef;
+            border-radius: 4px;
+            padding: 2px 6px;
+            display: inline-block;
+        }
+        .tooltip-box {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0px 2px 8px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔍 Privacy Policy Analyzer</h1>
+    <p class="text-muted">Enter a Privacy Policy URL to analyze collected and shared personal information.</p>
+
+    <!-- Input Form -->
+    <div class="input-group mb-3">
+        <input type="text" id="policyUrl" class="form-control" placeholder="Enter Privacy Policy URL" />
+        <button class="btn btn-primary" onclick="analyze()">Analyze</button>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="text-primary" style="display:none;">
+        <div class="spinner-border text-primary"></div> Analyzing policy...
+    </div>
+
+    <!-- Main Layout -->
+    <div class="row mt-4">
+        <!-- Attribute List -->
+        <div class="col-md-4">
+            <div id="attribute-lists"></div>
+        </div>
+
+        <!-- Full Policy -->
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h4>Full Privacy Policy</h4>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleViewMode()">Switch to Batch Mode</button>
+            </div>
+            <div id="policy-text" class="p-3 bg-light border rounded" style="max-height: 600px; overflow-y: auto;"></div>
+
+            <!-- Match Controls -->
+            <div id="match-controls" style="display:none;" class="mt-3">
+                <span id="match-info"></span>
+                <button class="btn btn-sm btn-outline-primary" onclick="showPrevious()">Previous</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="showNext()">Next</button>
+            </div>
+            <!-- Batch Info -->
+            <div id="batch-info" style="display:none;" class="mt-3 text-muted"></div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip-box"></div>
+</div>
+
+<script>
+let apiData = {};
+let policySentences = [];
+let currentMatches = [];
+let currentIndex = 0;
+let viewMode = "single"; // "single" or "batch"
+
+async function analyze() {
+    const url = document.getElementById("policyUrl").value;
+    if (!url) return alert("Please enter a URL");
+
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("attribute-lists").innerHTML = "";
+    document.getElementById("policy-text").innerHTML = "";
+    document.getElementById("match-controls").style.display = "none";
+    document.getElementById("batch-info").style.display = "none";
+
+    try {
+        const res = await fetch("/api/collected-and-shared-detailed/", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({url})
+        });
+        apiData = await res.json();
+        document.getElementById("loading").style.display = "none";
+
+        renderAttributeLists();
+        renderFullPolicy();
+    } catch (err) {
+        console.error(err);
+        alert("Error fetching data.");
+        document.getElementById("loading").style.display = "none";
+    }
+}
+
+function renderAttributeLists() {
+    const container = document.getElementById("attribute-lists");
+    let html = "<h5>First Party Collected</h5><ul>";
+    apiData.first_party_collected.forEach(item => {
+        html += `<li><a href="#" class="attribute-link" data-attr="${item.attribute}" onclick="scrollToSentence('${item.attribute}','first', this)">${item.attribute}</a></li>`;
+    });
+    html += "</ul><h5>Third Party Shared</h5><ul>";
+    apiData.third_party_shared.forEach(item => {
+        html += `<li><a href="#" class="attribute-link" data-attr="${item.attribute}" onclick="scrollToSentence('${item.attribute}','third', this)">${item.attribute}</a></li>`;
+    });
+    html += "</ul>";
+    container.innerHTML = html;
+}
+
+function renderFullPolicy() {
+    const container = document.getElementById("policy-text");
+    container.innerHTML = "";
+
+    let sentenceId = 0;
+    policySentences = [];
+
+    apiData.first_party_collected.concat(apiData.third_party_shared).forEach(item => {
+        item.details.forEach(d => {
+            sentenceId++;
+            const div = document.createElement("div");
+            div.className = "sentence mb-2";
+            div.id = "sentence-" + sentenceId;
+            div.textContent = d.sentence;
+
+            policySentences.push({
+                id: sentenceId,
+                sentence: d.sentence,
+                highlights: {
+                    pit: d.span,
+                    does: d.does_or_not.span,
+                    purpose: {span: d.purpose.span, value: d.purpose.value}
+                }
+            });
+
+            container.appendChild(div);
+        });
+    });
+}
+
+// ✅ 模糊匹配高亮方法（忽略大小写）
+function highlightPartial(text, span, className, tooltipText = null) {
+    if (!span) return text;
+    const pattern = new RegExp(span.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"); // 转义+忽略大小写
+    return text.replace(pattern, match => {
+        if (tooltipText) {
+            return `<span class="${className}" onmouseover="showTooltip(event,'${tooltipText}')" onmouseout="hideTooltip()">${match}</span>`;
+        }
+        return `<span class="${className}">${match}</span>`;
+    });
+}
+
+function scrollToSentence(attribute, type, element) {
+    // ✅ 高亮当前点击的 attribute
+    document.querySelectorAll(".attribute-link").forEach(el => el.classList.remove("active-attr"));
+    if (element) element.classList.add("active-attr");
+
+    const detailsArray = (type === "first" ? apiData.first_party_collected : apiData.third_party_shared)
+        .find(item => item.attribute === attribute)?.details || [];
+    if (detailsArray.length === 0) return;
+
+    // 清除所有高亮并恢复原文
+    document.querySelectorAll(".highlight-sentence").forEach(el => {
+        el.classList.remove("highlight-sentence");
+        const id = el.id.replace("sentence-", "");
+        const original = policySentences.find(s => s.id == id);
+        if (original) el.textContent = original.sentence;
+    });
+
+    // 更新匹配状态
+    currentMatches = [];
+    detailsArray.forEach(d => {
+        const sObj = policySentences.find(s => s.sentence === d.sentence);
+        if (sObj) currentMatches.push(sObj);
+    });
+    currentIndex = 0;
+
+    if (viewMode === "single") {
+        highlightAndScroll(currentMatches[currentIndex]);
+        document.getElementById("match-info").textContent = `Found ${currentIndex + 1}/${currentMatches.length}`;
+        document.getElementById("match-controls").style.display = "block";
+        document.getElementById("batch-info").style.display = "none";
+    } else {
+        // 批量模式：高亮所有匹配句子
+        highlightAllMatches(currentMatches);
+        document.getElementById("match-controls").style.display = "none";
+        document.getElementById("batch-info").textContent = `Showing all ${currentMatches.length} matches for "${attribute}"`;
+        document.getElementById("batch-info").style.display = "block";
+    }
+}
+
+function highlightAndScroll(sentenceObj) {
+    if (!sentenceObj) return;
+
+    // 清除旧的高亮并恢复文本
+    document.querySelectorAll(".highlight-sentence").forEach(el => {
+        el.classList.remove("highlight-sentence");
+        const id = el.id.replace("sentence-", "");
+        const original = policySentences.find(s => s.id == id);
+        if (original) el.textContent = original.sentence;
+    });
+
+    const targetDiv = document.getElementById("sentence-" + sentenceObj.id);
+    targetDiv.scrollIntoView({behavior: "smooth", block: "center"});
+    targetDiv.classList.add("highlight-sentence");
+
+    let html = sentenceObj.sentence;
+    const h = sentenceObj.highlights;
+    if (h.purpose.span) html = highlightPartial(html, h.purpose.span, "highlight-orange", `Purpose: ${h.purpose.value}`);
+    if (h.does) html = highlightPartial(html, h.does, "highlight-green", `Does/Does Not: ${h.does}`);
+    if (h.pit) html = highlightPartial(html, h.pit, "highlight-blue");
+
+    targetDiv.innerHTML = html;
+}
+
+function highlightAllMatches(matches) {
+    matches.forEach(sentenceObj => {
+        const targetDiv = document.getElementById("sentence-" + sentenceObj.id);
+        targetDiv.classList.add("highlight-sentence");
+        let html = sentenceObj.sentence;
+        const h = sentenceObj.highlights;
+        if (h.purpose.span) html = highlightPartial(html, h.purpose.span, "highlight-orange", `Purpose: ${h.purpose.value}`);
+        if (h.does) html = highlightPartial(html, h.does, "highlight-green", `Does/Does Not: ${h.does}`);
+        if (h.pit) html = highlightPartial(html, h.pit, "highlight-blue");
+        targetDiv.innerHTML = html;
+    });
+}
+
+function showNext() {
+    if (currentMatches.length === 0) return;
+    if (currentIndex < currentMatches.length - 1) {
+        currentIndex++;
+        highlightAndScroll(currentMatches[currentIndex]);
+        document.getElementById("match-info").textContent = `Found ${currentIndex + 1}/${currentMatches.length}`;
+    }
+}
+
+function showPrevious() {
+    if (currentMatches.length === 0) return;
+    if (currentIndex > 0) {
+        currentIndex--;
+        highlightAndScroll(currentMatches[currentIndex]);
+        document.getElementById("match-info").textContent = `Found ${currentIndex + 1}/${currentMatches.length}`;
+    }
+}
+
+function toggleViewMode() {
+    if (viewMode === "single") {
+        viewMode = "batch";
+        document.querySelector("button[onclick='toggleViewMode()']").textContent = "Switch to Single Mode";
+    } else {
+        viewMode = "single";
+        document.querySelector("button[onclick='toggleViewMode()']").textContent = "Switch to Batch Mode";
+    }
+}
+
+function showTooltip(e, text) {
+    const tooltip = document.getElementById("tooltip");
+    tooltip.textContent = text;
+    tooltip.style.left = e.pageX + "px";
+    tooltip.style.top = (e.pageY + 10) + "px";
+    tooltip.style.display = "block";
+}
+
+function hideTooltip() {
+    document.getElementById("tooltip").style.display = "none";
+}
+</script>
+</body>
+</html>

@@ -29,31 +29,33 @@ def get_display_attr(attr,category):
 
 import re
 
-def highlight_spans(sentence, attributes, category_label):
-    span_map = []
+def highlight_spans(sentence, attributes, category, predicted_values=None):
+    """
+    sentence: 原始句子
+    attributes: dict, e.g. {"Personal Information Type": ["contact"], "Purpose": ["advertising"]}
+    category: 类别（First Party / Third Party）
+    predicted_values: dict, e.g. {"Purpose": "advertising or analytics"}
+    """
+    html = sentence
+    for attr_type, spans in attributes.items():
+        css_class = ""
+        tooltip = ""
 
-    for attr, spans in attributes.items():
-        css_class = (
-            "action-first-party" if category_label == "First Party Collection/Use" and attr == "Action Third Party"
-            else attr.lower().replace(" ", "-")
-        )
+        if attr_type == "Personal Information Type":
+            css_class = "highlight-pit"
+        elif attr_type == "Purpose":
+            css_class = "highlight-purpose"
+            #  用真实预测值显示在tooltip中
+            purpose_value = predicted_values.get("Purpose", "Purpose") if predicted_values else "Purpose"
+            tooltip = f'data-tooltip="Purpose: {purpose_value}"'
+        elif attr_type == "Does/Does Not":
+            css_class = "highlight-does"
+
         for span in spans:
-            if not span or not span.strip():
-                continue
-            cleaned = span.strip()
-            span_map.append((cleaned, css_class))
+            #  用 mark + tooltip 包装 span
+            html = html.replace(span, f'<mark class="{css_class}" {tooltip}>{span}</mark>')
 
-    span_map = sorted(span_map, key=lambda x: -len(x[0]))
-
-    for text, css_class in span_map:
-        pattern = re.compile(re.escape(text), re.IGNORECASE)
-        sentence = pattern.sub(
-            lambda m: f'<mark class="{css_class}">{m.group(0)}</mark>',
-            sentence,
-            count=1
-        )
-
-    return sentence
+    return html
 
 
 
@@ -76,7 +78,7 @@ def extract_attributes_view(request):
             extracted = extract_from_paragraph(para, labels, span_model, span_tokenizer)
 
             for sentence_item in extracted:
-                # ✅ 去除伪 span（例如 "what part of the text refers to purpose"）
+                # 去除伪 span（例如 "what part of the text refers to purpose"）
                 cleaned_attributes = {}
                 for attr, spans in sentence_item["attributes"].items():
                     real_spans = [s for s in spans if is_real_span(s, sentence_item["sentence"])]
@@ -84,7 +86,7 @@ def extract_attributes_view(request):
                         cleaned_attributes[attr] = real_spans
                 sentence_item["attributes"] = cleaned_attributes
 
-                # ✅ 高亮 + 展示 friendly 名称
+                # 高亮 + 展示 friendly 名称
                 sentence_item["highlighted"] = highlight_spans(
                     sentence_item["sentence"],
                     sentence_item["attributes"],
@@ -221,3 +223,16 @@ class ClassifyParagraphView(APIView):
 
 def test_filter_sentences_page(request):
     return render(request, 'privacy_classification_app/test_filter_sentences.html')
+
+'''
+Below content added on July 20,2025
+Try to add front end example
+'''
+from django.shortcuts import render
+
+def index(request):
+    return render(request, "privacy_classification_app/index.html")
+
+def result(request):
+    attribute = request.GET.get("attr", "")
+    return render(request, "privacy_classification_app/result.html", {"attribute": attribute})

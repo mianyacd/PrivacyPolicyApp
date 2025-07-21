@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attribute Details</title>
+    <style>
+        .highlight-blue { color: blue; font-weight: bold; }
+        .highlight-green { color: green; font-weight: bold; }
+        .highlight-orange { color: orange; font-weight: bold; cursor: pointer; }
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0px 2px 8px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+<h1>Sentences for "{{ attribute }}"</h1>
+<div id="loading">Loading sentences...</div>
+<div id="sentences"></div>
+<div id="tooltip" class="tooltip"></div>
+<button onclick="window.history.back()">Back</button>
+
+<script>
+const attributeName = "{{ attribute }}";
+const urlParams = new URLSearchParams(window.location.search);
+const policyUrl = urlParams.get("policyUrl");
+const type = urlParams.get("type"); // first 或 third
+
+async function loadSentences() {
+    const response = await fetch("/api/collected-and-shared-detailed/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: policyUrl })
+    });
+    const data = await response.json();
+    document.getElementById("loading").style.display = "none";
+
+    const detailsArray = (type === "first" ? data.first_party_collected : data.third_party_shared)
+        .find(item => item.attribute === attributeName)?.details || [];
+
+    const container = document.getElementById("sentences");
+    if (detailsArray.length === 0) {
+        container.innerHTML = `<p>No sentences found for "${attributeName}"</p>`;
+        return;
+    }
+
+    detailsArray.forEach(detail => {
+        const div = document.createElement("div");
+        let sentenceHTML = detail.sentence;
+
+        // Purpose highlight with tooltip
+        if (detail.purpose.span) {
+            const spanTag = `<span class="highlight-orange"
+                onmouseover="showTooltip(event, 'Purpose: ${detail.purpose.value}')"
+                onmouseout="hideTooltip()">${detail.purpose.span}</span>`;
+            sentenceHTML = sentenceHTML.replace(detail.purpose.span, spanTag);
+        }
+
+        // Does highlight
+        if (detail.does_or_not.span) {
+            sentenceHTML = sentenceHTML.replace(detail.does_or_not.span, `<span class="highlight-green">${detail.does_or_not.span}</span>`);
+        }
+
+        // PIT highlight
+        if (detail.span) {
+            sentenceHTML = sentenceHTML.replace(detail.span, `<span class="highlight-blue">${detail.span}</span>`);
+        }
+
+        div.innerHTML = `<p>${sentenceHTML}</p>`;
+        container.appendChild(div);
+    });
+}
+
+function showTooltip(e, text) {
+    const tooltip = document.getElementById("tooltip");
+    tooltip.textContent = text;
+    tooltip.style.left = e.pageX + "px";
+    tooltip.style.top = (e.pageY + 10) + "px";
+    tooltip.style.display = "block";
+}
+
+function hideTooltip() {
+    document.getElementById("tooltip").style.display = "none";
+}
+
+loadSentences();
+</script>
+</body>
+</html>
