@@ -89,6 +89,76 @@ function hideTooltip() {
 }
 
 loadSentences();
+
+<hr>
+<h2>Ask a Question About This Policy</h2>
+
+<form id="user-question-form">
+    <input type="hidden" id="question-policy-url" value="{{ policyUrl|default:"" }}">
+    <label for="question-type">Choose a question:</label>
+    <select id="question-type">
+        <option value="conflict_statement">Does this policy contain any conflict statement?</option>
+        <option value="third_party_sharing">What information is shared with third parties?</option>
+    </select>
+    <button type="submit">Submit</button>
+</form>
+
+<div id="question-result" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></div>
+
+
+document.getElementById("user-question-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const url = document.getElementById("question-policy-url").value || policyUrl;
+    const questionType = document.getElementById("question-type").value;
+
+    const res = await fetch("/user-question-from-db/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({
+            url: url,
+            question_type: questionType
+        })
+    });
+
+    const data = await res.json();
+    const resultBox = document.getElementById("question-result");
+
+    if (questionType === "conflict_statement") {
+        resultBox.innerHTML = `<p><strong>Answer:</strong> ${data.answer}</p>`;
+        if (data.conflicting_attributes?.length) {
+            resultBox.innerHTML += "<ul>" + data.conflicting_attributes.map(attr => `<li>${attr}</li>`).join("") + "</ul>";
+        }
+    } else if (questionType === "third_party_sharing") {
+        if (data.shared_info?.length) {
+            resultBox.innerHTML = data.shared_info.map(item =>
+                `<p><strong>${item.personal_info}</strong> → ${item.third_party}<br><em>${item.sentence}</em></p>`
+            ).join("");
+        } else {
+            resultBox.innerHTML = "<p>No shared personal information found.</p>";
+        }
+    } else {
+        resultBox.innerHTML = "<p>No result.</p>";
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === name + "=") {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
 </script>
 </body>
 </html>

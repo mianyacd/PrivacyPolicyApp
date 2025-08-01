@@ -22,6 +22,10 @@ from .views import test_filter_sentences_page
 
 from .views_api_cached import ExtractAttributesCachedView, CollectedAndSharedDetailedView
 from privacy_classification_app.views import index
+from .views_api_cached import AnalyzeAndStoreView
+from .views_user_question import UserQuestionFromDBView
+from .views_user_question import result_view
+from .views_user_question import form_view
 
 urlpatterns = [
     path('classify-url/', ClassifyURLView.as_view(), name='classify_url'),
@@ -35,7 +39,15 @@ urlpatterns = [
     path("extract-attributes-cached/", ExtractAttributesCachedView.as_view(), name="extract_attributes_cached"),
     path('collected-and-shared-detailed/', CollectedAndSharedDetailedView.as_view(), name='collected_and_shared_detailed'),
 
+    path("analyze-and-store/", AnalyzeAndStoreView.as_view(), name="analyze_and_store"),
+
+    path("user-question-from-db/", UserQuestionFromDBView.as_view(), name="user_question_from_db"),
+
+    path("question-form/", form_view, name="question_form"),
+    path("result/", result_view, name="result"),
+
     path('', index, name='index'),
+
 ]
 
 

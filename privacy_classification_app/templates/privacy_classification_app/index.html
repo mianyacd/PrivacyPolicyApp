@@ -36,7 +36,6 @@
 <div class="container">
     <h1>🔍 Privacy Policy Analyzer</h1>
     <p class="text-muted">Enter a Privacy Policy URL to analyze collected and shared personal information.</p>
-
     <!-- Input Form -->
     <div class="input-group mb-3">
         <input type="text" id="policyUrl" class="form-control" placeholder="Enter Privacy Policy URL" />
@@ -47,6 +46,12 @@
     <div id="loading" class="text-primary" style="display:none;">
         <div class="spinner-border text-primary"></div> Analyzing policy...
     </div>
+
+    <!-- Frequent Questions Button -->
+    <div id="faq-button-container" style="display: none;" class="mb-3">
+    <button class="btn btn-info" onclick="showFrequentQuestions()">Frequent Questions</button>
+    </div>
+
 
     <!-- Main Layout -->
     <div class="row mt-4">

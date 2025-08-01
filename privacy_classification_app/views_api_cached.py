@@ -351,3 +351,19 @@ class CollectedAndSharedDetailedView(APIView):
                 "message": str(e),
                 "trace": traceback.format_exc()
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+from .services.analysis_manager import analyze_and_store_pipeline
+
+@method_decorator(csrf_exempt, name='dispatch')
+class AnalyzeAndStoreView(APIView):
+    def post(self, request):
+        url = request.data.get("url")
+        if not url:
+            return Response({"error": "Missing URL"}, status=400)
+        try:
+            result = analyze_and_store_pipeline(url)
+            return Response(result)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

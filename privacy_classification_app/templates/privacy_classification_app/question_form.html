@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Question Form</title>
+</head>
+<body>
+    <h2>Ask a Question about Privacy Policy</h2>
+
+    <form method="get" action="/result/">
+        <!-- 改为隐藏输入框，自动传入 URL -->
+        <input type="hidden" id="policyUrl" name="policyUrl" value="{{ url }}">
+
+        <p><strong>Policy URL:</strong> {{ url }}</p>
+
+        <label for="type">Select Question Type:</label><br>
+        <select id="type" name="type" required>
+            <option value="conflict_statement">Does this policy contain any conflict statement?</option>
+            <option value="third_party_sharing">What personal information is shared with third parties?</option>
+        </select><br><br>
+
+        <input type="submit" value="Submit">
+    </form>
+
+    <p><a href="/">Go Back to Home</a></p>
+</body>
+</html>
+
